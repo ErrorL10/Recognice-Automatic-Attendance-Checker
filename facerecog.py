@@ -23,7 +23,11 @@ def findEncodings(images):
     encodeList = []
     for img in images:
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        encoded_face = face_recognition.face_encodings(img)[0]
+        try:
+            encoded_face = face_recognition.face_encodings(img)[0]
+        except IndexError as e:
+            print("No Faces Detected")
+            
         encodeList.append(encoded_face)
     return encodeList
 
@@ -62,7 +66,7 @@ def detect_face():
         
     
     for encode_face, faceloc in zip(encoded_faces,faces_in_frame):
-        matches = face_recognition.compare_faces(encoded_face_train, encode_face)
+        matches = face_recognition.compare_faces(encoded_face_train, encode_face, tolerance=0.9)
         faceDist = face_recognition.face_distance(encoded_face_train, encode_face)
         matchIndex = np.argmin(faceDist)
         print(matchIndex)
@@ -109,5 +113,10 @@ students_list.pack()
 while True:
     detect_face()
     root.mainloop()
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+
+    if not tk.Toplevel.winfo_exists(root):
+        cap.release()
+        cv2.destroyAllWindows()
         break
+
+
