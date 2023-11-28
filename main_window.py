@@ -3,7 +3,8 @@ import customtkinter as ctk
 from PIL import Image, ImageTk
 from CTkTable import *
 from datetime import date
-from facerecog import face_panel
+from tkinter import messagebox
+
 
 class main_window(tk.Tk):
     def __init__(self):
@@ -87,15 +88,23 @@ class home(ctk.CTkFrame):
         self.section_table = CTkTable(master=self.section_frame, row=4, column=4, values=self.get_section_table_values())
         self.section_table.grid(row=2, column=0, padx=20, pady=10, columnspan=2, sticky='ew')
         
-        self.check_attendance_button = ctk.CTkButton(master=self, text="HOME", command=self.check_attendance)
+        self.check_attendance_button = ctk.CTkButton(master=self, text="CHECK ATTENDANCE", command=self.check_attendance)
         self.check_attendance_button.grid(row=3, column=0, padx=20, pady=10, sticky='ew')
         
         self.section_frame.grid(row=1, column=0, padx=20, pady=20, sticky='ew')
         
     def check_attendance(self):
-        # self.face = face_panel()
-        print("attendance")
-        
+        confirm = messagebox.askyesno("Check Attendance?", "Do you wish to start checking?")
+        if confirm:
+            # for task_id in self.after_ids:
+            #     self.after_cancel(task_id)
+            # self.destroy()
+            from face_window import face_panel
+            next_window = face_panel()
+            next_window.mainloop()
+            in_main = False
+        else:
+            print("exit operation canceled")
         
         
     def get_section_table_values(self):
@@ -106,15 +115,15 @@ class home(ctk.CTkFrame):
             
         return value
 
-class students(ctk.ctkFrame):
-     def __init__(self, master, **kwargs):
-        super().__init__(master, **kwargs)
+# class students(ctk.ctkFrame):
+#      def __init__(self, master, **kwargs):
+#         super().__init__(master, **kwargs)
 
-class reports(ctk.CTkFrame):
-     def __init__(self, master, **kwargs):
-        super().__init__(master, **kwargs)
-    
+# class reports(ctk.CTkFrame):
+#      def __init__(self, master, **kwargs):
+#         super().__init__(master, **kwargs)
+
 if __name__ == "__main__":
     main = main_window()
     main.mainloop()
-        
+            

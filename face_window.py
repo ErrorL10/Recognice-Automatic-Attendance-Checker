@@ -9,11 +9,11 @@ from Anti_Spoofing.test import test
 import customtkinter as ctk
 
 path = 'student_images'
-
 name_list = []
 files = os.listdir(path)
+process = 0
 
-class face_panel(tk.Tk):
+class face_panel(tk.Toplevel):
     def __init__(self):
         super().__init__()
         
@@ -30,30 +30,20 @@ class camera_frame(ctk.CTkFrame):
         
         self.classNames = []
         self.images = []
-        self.process = 0
-        
-        self.label_widget = ctk.CTkLabel(master=self)
-        
-        for file in files:
-            self.curImg = cv2.imread(f'{path}/{file}')
-            self.images.append(self.curImg)
-            self.classNames.append(os.path.splitext(file)[0])
-
-        self.encoded_face_train = self.findEncodings()
-
         self.device_id = 0
-        self.cap  = cv2.VideoCapture(self.device_id)
+        self.cap = None
         
-        if self.process == 0:
-            self.detect_face()
-        else:
-            self.label_widget.after_cancel(self.label_widget.after_id)
-            self.decode_barcodes()
+        self.camera_panel = ctk.CTkFrame(master=self)
+        self.camera_panel.grid(row=0, column=0, sticky='nesw')
         
-        self.label_widget.grid(row=0, column=0, padx=20, pady=20, sticky='nesw')
+        self.camera = ctk.CTkLabel(master=self.camera_panel, text="")
+        self.camera.grid(row=0, column=0, padx=20, pady=20, sticky='nesw')
+        # self.cap  = cv2.VideoCapture(self.device_id)
+        self.open_camera_button = ctk.CTkButton(master=self.camera_panel, text="Open Camera", command=self.open_camera)
+        self.open_camera_button.grid(row=1, column=0, padx=20, pady=20, sticky='nesw')
         
         self.info_frame = ctk.CTkFrame(master=self)
-        self.info_frame.grid(row=0, column=1, padx=20, pady=20, sticky='nesw')
+        self.info_frame.grid(row=0, column=1, sticky='nesw')
         
         #Present Students List
         self.students_list = tk.Listbox(master=self.info_frame)
@@ -63,9 +53,27 @@ class camera_frame(ctk.CTkFrame):
         self.next_button = ctk.CTkButton(master=self.info_frame, text="Next", command=self.start_barcode_attendance)
         self.next_button.grid(row=1, column=0, padx=20, pady=20, sticky='nesw')
     
+    def open_camera(self):
+        for file in files:
+            self.curImg = cv2.imread(f'{path}/{file}')
+            self.images.append(self.curImg)
+            self.classNames.append(os.path.splitext(file)[0])
+
+        self.encoded_face_train = self.findEncodings()
+        
+        self.cap = cv2.VideoCapture(self.device_id)
+        self.detect_face()
+        
     def start_barcode_attendance(self):
-        self.process = 1
-        print(self.process)
+        from barcode_window import barcode_window
+        self.cap.release()
+        self.master.destroy()
+        barcode = barcode_window()
+        barcode.mainloop
+        
+        
+        
+        
 
     def findEncodings(self):
             self.encodeList = []
@@ -121,11 +129,15 @@ class camera_frame(ctk.CTkFrame):
             # Convert the PIL Image to Tkinter PhotoImage67
             video_label = ImageTk.PhotoImage(image=processed_image)
             
-            self.label_widget.photo_image = video_label
-            self.label_widget.configure(image=video_label)
-            self.label_widget.after(10, self.detect_face)
-        except:
-            print("Skill Issue: ")
+            self.camera.photo_image = video_label
+            self.camera.configure(image=video_label)
+            self.camera.after(10, self.detect_face)
+        except cv2.error as e:
+            s = str(e)
+            print(s)
+        except Exception as e:
+            s = str(e)
+            print(s)
             
     def decode_barcodes(self):
         _, frame = self.cap.read()
@@ -157,14 +169,14 @@ class camera_frame(ctk.CTkFrame):
         photo_image = ImageTk.PhotoImage(image=processed_image)
 
         # Update the video label with the new frame
-        self.label_widget.photo_image = photo_image 
-        self.label_widget.configure(image=photo_image)
-        self.label_widget.after(10, self.decode_barcodes)
+        self.camera.photo_image = photo_image 
+        self.camera.configure(image=photo_image)
+        self.camera.after(10, self.decode_barcodes)
 
                
-if __name__ == "__main__":
-    face = face_panel()
-    face.mainloop()
+# if __name__ == "__main__":
+#     face = face_panel()
+#     face.mainloop()
 
 
 
