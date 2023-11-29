@@ -32,10 +32,12 @@ class main_window(tk.Tk):
         self.home.grid(row=0, column=1, sticky="nsew")
         
 class sidebar(ctk.CTkFrame):
-  
+    
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
         
+        self.current_frame = "home"
+
         font = ("Roboto",20)
         user_image = ctk.CTkImage(dark_image= Image.open("student_images\errol liscano.jpg"), size=(100,100))
         
@@ -59,7 +61,15 @@ class sidebar(ctk.CTkFrame):
         print("Logged In")
     
     def students(self):
-        print("Logged In")
+        master = self.master
+        old_frame = None
+        if self.current_frame == "home":
+            old_frame = home(master=master)
+            for child in master.winfo_children():
+
+                if isinstance(child, ctk.CTkFrame) and child == old_frame:
+                    child.grid_forget()
+                    child.grid(in_=master, row=0, column=1)
     
     def reports(self):
         print("Logged In")
@@ -115,10 +125,30 @@ class home(ctk.CTkFrame):
             
         return value
 
-# class students(ctk.ctkFrame):
-#      def __init__(self, master, **kwargs):
-#         super().__init__(master, **kwargs)
+class students(ctk.CTkFrame):
+    def __init__(self, master, **kwargs):
+        super().__init__(master, **kwargs)
 
+
+        #Student Label
+        self.student_label = ctk.CTkLabel(master=self, text = "Students", font= ("Roboto", 20))
+        self.student_label.grid(row=0, column=0, padx=20, pady=20, sticky='ew')
+
+        #section dropdown
+        self.section_selection = ctk.CTkComboBox(master=self, values=["BSCS-3A", "BSCS-3B", "BSCS-3C"])
+        self.section_selection.grid(row=0, column=1, padx=20, pady=20, sticky='ew')
+        #Table
+        self.student_table = CTkTable(master=self, row=5, column=4, values=self.get_student_table_values)
+        self.student_table.grid(row=1, column=0, padx=20, pady=10, columnspan=2, sticky='ew')
+
+    def get_student_table_values(self):
+        value = [["Student Number","Name", "Present","Absent"],
+        [2021300193, "Errol Liscano", 15, 0],
+        [2021300123, "Melvin Ramoran", 10, 5],
+        [2021300321, "Nathaniel De Guzman", 15, 0],
+        [2021306969, "Marc Dela Cruz", 0, 15]]
+            
+        return value
 # class reports(ctk.CTkFrame):
 #      def __init__(self, master, **kwargs):
 #         super().__init__(master, **kwargs)
