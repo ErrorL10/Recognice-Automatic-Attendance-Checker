@@ -4,7 +4,8 @@ from PIL import Image, ImageTk
 from CTkTable import *
 from datetime import date
 from tkinter import messagebox
-
+from tkinter import ttk
+from data_controller import data_controller
 
 class main_window(tk.Tk):
     def __init__(self):
@@ -23,46 +24,71 @@ class main_window(tk.Tk):
         self.title('RecogNice Dashboard')
         self.geometry('900x600')
         
+        self.current_frame = "home"
+        self.parent_frame = self.winfo_toplevel()
+        
         #sidebar
-        self.sidebar = sidebar(master=self, fg_color="black")
+        self.sidebar = ctk.CTkFrame(master=self)
+        font = ("Roboto",20)
+        user_image = ctk.CTkImage(dark_image= Image.open("student_images\BAGS.jpg"), size=(100,100))
+        
+        self.user_image_label = ctk.CTkLabel(master=self.sidebar, image=user_image, text="")
+        self.user_image_label.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
+        
+        #Name Display
+        self.user_name = ctk.CTkLabel(master=self.sidebar, text="Errol Liscano", anchor='center', font=font)
+        self.user_name.grid(row=1, column=0, padx=20, pady=5, sticky="nsew")
+        
+        #buttons
+        self.home_button = ctk.CTkButton(master=self.sidebar, text="HOME", command=self.home)
+        self.home_button.grid(row=2, column=0, padx=20, pady=10, sticky="ew")
+        self.students_button = ctk.CTkButton(master=self.sidebar, text="STUDENTS", command=self.students)
+        self.students_button.grid(row=3, column=0, padx=20, pady=10, sticky="ew")
+        self.reports_button = ctk.CTkButton(master=self.sidebar, text="REPORTS", command=self.reports)
+        self.reports_button.grid(row=4, column=0, padx=20, pady=10, sticky="ew")
+        
         self.sidebar.grid(row=0, column=0, sticky="nsew")
         
         #home
         self.home = home(master=self)
         self.home.grid(row=0, column=1, sticky="nsew")
         
-class sidebar(ctk.CTkFrame):
-  
-    def __init__(self, master, **kwargs):
-        super().__init__(master, **kwargs)
-        
-        font = ("Roboto",20)
-        user_image = ctk.CTkImage(dark_image= Image.open("student_images\errol liscano.jpg"), size=(100,100))
-        
-        self.user_image_label = ctk.CTkLabel(master=self, image=user_image, text="")
-        self.user_image_label.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
-        
-        #Name Display
-        self.user_name = ctk.CTkLabel(master=self, text="Errol Liscano", anchor='center', font=font)
-        self.user_name.grid(row=1, column=0, padx=20, pady=5, sticky="nsew")
-        
-        #buttons
-        self.home_button = ctk.CTkButton(master=self, text="HOME", command=self.home)
-        self.home_button.grid(row=2, column=0, padx=20, pady=10, sticky="ew")
-        self.students_button = ctk.CTkButton(master=self, text="STUDENTS", command=self.students)
-        self.students_button.grid(row=3, column=0, padx=20, pady=10, sticky="ew")
-        self.reports_button = ctk.CTkButton(master=self, text="REPORTS", command=self.reports)
-        self.reports_button.grid(row=4, column=0, padx=20, pady=10, sticky="ew")
-        
-       
     def home(self):
-        print("Logged In")
+        if self.current_frame != "home":
+            self.current_frame = "home"
+            for frame in self.parent_frame.grid_slaves():
+                if int(frame.grid_info()["column"]) == 1:
+                    frame.grid_forget()
+                    self.home = home(master=self)
+                    self.home.grid(row=0, column=1, sticky="nsew")
+                    
+        controller = data_controller()
+        controller.create_database()
+        controller.create_tables()
+                    
+            
     
     def students(self):
-        print("Logged In")
-    
+        if self.current_frame != "students":
+            self.current_frame = "students"
+            for frame in self.parent_frame.grid_slaves():
+                if int(frame.grid_info()["column"]) == 1:
+                    frame.grid_forget()
+                    self.students = students(master=self)
+                    self.students.grid(row=0, column=1, sticky="nsew")
+                    
+        from data_controller import data_controller
+        controller = data_controller()
+        controller.get_student_table_info(students=controller.get_students())
+        
     def reports(self):
-        print("Logged In")
+        if self.current_frame != "reports":
+            self.current_frame = "reports"
+            for frame in self.parent_frame.grid_slaves():
+                if int(frame.grid_info()["column"]) == 1:
+                    frame.grid_forget()
+                    self.reports = reports(master=self)
+                    self.reports.grid(row=0, column=1, sticky="nsew")
         
 class home(ctk.CTkFrame):
     def __init__(self, master, **kwargs):
@@ -115,13 +141,47 @@ class home(ctk.CTkFrame):
             
         return value
 
-# class students(ctk.ctkFrame):
-#      def __init__(self, master, **kwargs):
-#         super().__init__(master, **kwargs)
+class students(ctk.CTkFrame):
+    def __init__(self, master, **kwargs):
+        super().__init__(master, **kwargs)
 
-# class reports(ctk.CTkFrame):
-#      def __init__(self, master, **kwargs):
-#         super().__init__(master, **kwargs)
+
+        #Student Label
+        self.student_label = ctk.CTkLabel(master=self, text = "Students", font= ("Roboto", 20))
+        self.student_label.grid(row=0, column=0, padx=20, pady=20, sticky='ew')
+
+        #section dropdown
+        self.section_selection = ctk.CTkComboBox(master=self, values=["BSCS-3A", "BSCS-3B", "BSCS-3C"])
+        self.section_selection.grid(row=0, column=1, padx=20, pady=20, sticky='ew')
+        #Table
+        columns = ["student_number", "name", "present", "absent"]
+        self.students_table = ttk.Treeview(self, columns=columns)
+
+        self.students_table.heading("#0", text="#")
+        self.students_table.heading("student_number", text="Student Number")
+        self.students_table.heading("name", text="Name")
+        self.students_table.heading("present", text="Presences")
+        self.students_table.heading("absent", text="Absences")
+
+        self.students_table.column("#0", width=50)
+        self.students_table.column("present", width=100)  
+        self.students_table.column("absent", width=100)  
+        
+        controller = data_controller()
+        students_list = controller.get_student_table_info(students=controller.get_students())
+        counter = 1
+        for student in students_list:
+            self.students_table.insert("", tk.END,text=counter, values=student)
+            counter+=1
+
+        self.students_table.grid(row=1, column=0, padx=20, pady=10, columnspan=2, sticky='nsew')
+
+class reports(ctk.CTkFrame):
+    def __init__(self, master, **kwargs):
+        super().__init__(master, **kwargs)
+        
+        self.student_label = ctk.CTkLabel(master=self, text = "Reports", font= ("Roboto", 20))
+        self.student_label.grid(row=0, column=0, padx=20, pady=20, sticky='ew')
 
 if __name__ == "__main__":
     main = main_window()

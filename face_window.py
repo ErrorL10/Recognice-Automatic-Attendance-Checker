@@ -1,3 +1,4 @@
+from datetime import date
 import cv2
 import face_recognition
 from pyzbar.pyzbar import decode
@@ -7,6 +8,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 from Anti_Spoofing.test import test
 import customtkinter as ctk
+from data_controller import data_controller
 
 path = 'student_images'
 name_list = []
@@ -69,12 +71,8 @@ class camera_frame(ctk.CTkFrame):
         self.cap.release()
         self.master.destroy()
         barcode = barcode_window()
-        barcode.mainloop
-        
-        
-        
-        
-
+        barcode.mainloop  
+    
     def findEncodings(self):
             self.encodeList = []
             for img in self.images:
@@ -88,11 +86,25 @@ class camera_frame(ctk.CTkFrame):
             return self.encodeList
 
     def markAttendance(self, name):
+        controller = data_controller()
+        students = controller.get_students()
         
+        name = name.title()
         if name not in name_list: 
             name_list.append(name)
-            self.students_list.insert(0, name.capitalize())
-    
+            
+            student_number = 0
+            for student in students:
+                if student[1] == name:
+                    student_number = student[0]
+            
+            today = date.today()
+            date_today = today.strftime("%m/%d/%Y")
+            time_today = today.strftime("%H:%M")
+            
+            student_info = f"{student_number}\n{name}"
+            self.students_list.insert(0, student_info)
+            controller.write_face_attendance([student_number, name, date_today, 1, time_today, 0, "N/A", "Absent"])
 
     def detect_face(self):
         try:
