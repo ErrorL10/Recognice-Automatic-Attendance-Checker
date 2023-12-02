@@ -11,6 +11,7 @@ class main_window(tk.Tk):
     def __init__(self):
         super().__init__()
         
+        self.controller = data_controller()
         # Color Theme 
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("dark-blue")
@@ -62,9 +63,8 @@ class main_window(tk.Tk):
                     self.home = home(master=self)
                     self.home.grid(row=0, column=1, sticky="nsew")
                     
-        controller = data_controller()
-        controller.create_database()
-        controller.create_tables()
+        self.controller.create_database()
+        self.controller.create_tables()
                     
             
     
@@ -94,6 +94,7 @@ class home(ctk.CTkFrame):
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
         
+        self.controller = data_controller()
         font = ("Roboto",36)
         
         #Main Label
@@ -122,13 +123,10 @@ class home(ctk.CTkFrame):
     def check_attendance(self):
         confirm = messagebox.askyesno("Check Attendance?", "Do you wish to start checking?")
         if confirm:
-            # for task_id in self.after_ids:
-            #     self.after_cancel(task_id)
-            # self.destroy()
+
             from face_window import face_panel
             next_window = face_panel()
             next_window.mainloop()
-            in_main = False
         else:
             print("exit operation canceled")
         
@@ -163,12 +161,14 @@ class students(ctk.CTkFrame):
         self.students_table.heading("present", text="Presences")
         self.students_table.heading("absent", text="Absences")
 
+            
         self.students_table.column("#0", width=50)
         self.students_table.column("present", width=100)  
         self.students_table.column("absent", width=100)  
         
         controller = data_controller()
         students_list = controller.get_student_table_info(students=controller.get_students())
+        
         counter = 1
         for student in students_list:
             self.students_table.insert("", tk.END,text=counter, values=student)
@@ -182,6 +182,9 @@ class reports(ctk.CTkFrame):
         
         self.student_label = ctk.CTkLabel(master=self, text = "Reports", font= ("Roboto", 20))
         self.student_label.grid(row=0, column=0, padx=20, pady=20, sticky='ew')
+
+        # controller = data_controller()
+        # controller.insert_attendance()
 
 if __name__ == "__main__":
     main = main_window()

@@ -1,8 +1,12 @@
+import csv
 import cv2
 from pyzbar.pyzbar import decode
 from PIL import Image, ImageTk
 import tkinter as tk
 import customtkinter as ctk
+from data_controller import data_controller
+
+student_number_list = []
 
 class barcode_window(tk.Toplevel):
     def __init__(self):
@@ -50,6 +54,8 @@ class camera_frame(ctk.CTkFrame):
         
     # Function to decode barcodes using brightness normalization
     def decode_barcodes(self):
+        controller = data_controller()
+        students = controller.get_students()
         
         _, frame = self.cap.read()
          
@@ -73,10 +79,25 @@ class camera_frame(ctk.CTkFrame):
 
         # Draw bounding boxes and data around detected barcodes
         for obj in decoded_objects:
-            x, y, w, h = obj.rect
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            cv2.putText(frame, str(obj.data), (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-
+            barcode_data = obj.data.decode('utf-8')
+ 
+            recognized = False
+            barcode_int = int(barcode_data) if barcode_data.isdigit() else "No"
+            for student in students:
+                if student[0] == barcode_int:
+                    recognized = True
+                    
+                    
+            if recognized:
+                x, y, w, h = obj.rect
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                cv2.putText(frame, barcode_data, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+                self.mark_attendance(barcode_int)
+            else:
+                x, y, w, h = obj.rect
+                cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 0, 255), 2)
+                cv2.putText(frame, "Not Recognized", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+                    
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA) 
         # Convert the processed frame to PIL Image format
         processed_image = Image.fromarray(frame)
@@ -89,19 +110,39 @@ class camera_frame(ctk.CTkFrame):
         self.camera.configure(image=photo_image)
         self.camera.after(10, self.decode_barcodes)
 
-
+    def mark_attendance(self, student_number):
+        controller = data_controller()
+        students = controller.get_students()
+        
+        if student_number not in student_number_list: 
+            student_number_list.append(student_number)
+            
+            student_name = ""
+            for student in students:
+                if student[0] == student_number:
+                    student_name = student[1]
+            
+            updated_value = self.update_attendance(student_number)
+            
+            self.students_list.insert(0, student_name)
+            controller.write_barcode_attendance(updated_value)
      
+    def update_attendance(self, student_number):
+        import time
+        time_today = time.strftime("%H:%M:%S")
+            
+        updated_value = []
+        with open('attendance.csv', 'r', newline='') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                if row[0] == str(student_number):
+                    row[5] = 1
+                    row[6] = time_today
+                    row[7] = 'Present'  
+                updated_value.append(row)
+        
+        return updated_value
+    
+    
 
 
-# # Create the Tkinter GUI
-# root = tk.Tk()
-# root.title('Barcode Scanner')
-
-# # Create a label to display the video stream
-# label_widget = tk.Label(root)
-# label_widget.pack()
-
-# # Start the video capture loop
-# while True:
-#     process_frame()
-#     root.mainloop()

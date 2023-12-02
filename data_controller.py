@@ -1,4 +1,5 @@
 import csv
+from datetime import date
 import mysql.connector
 
 class data_controller:
@@ -138,12 +139,55 @@ class data_controller:
         conn.close()
         
         return students
-   
     
-    def write_face_attendance(self, value):
+    def insert_attendance(self):
+        conn = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database=self.database_name
+        )
+        
+        cursor = conn.cursor()
+        
+        with open('attendance.csv', 'r', newline='') as file:
+            reader = csv.reader(file)
+            
+            for row in reader:
+                sql = f"INSERT INTO attendance (student_number, attendance_date, face_attendance, face_attendance_time, barcode_attendance, barcode_attendance_time, attendance_status) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+                cursor.execute(sql, (row[0], row[2], row[3], row[4], row[5], row[6], row[7]))
+
+            # Commit the changes and close the connection
+            conn.commit()
+            cursor.close()
+            conn.close()
+        
+    def fill_attendance(self):
+        students_list = self.get_students()
+        
+        today = date.today()
+        date_today = date.strftime(today, "%Y/%m/%d")
+        
+        data = []
+        for row in students_list:
+            data_row = [row[0], row[1], date_today, "N/A", 0, "N/A", 0, "Absent"]
+            data.append(data_row)
+            
         with open('attendance.csv', mode='a', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(value)
-            
+            writer.writerows(data)
+        pass
+    
+    def write_face_attendance(self, value):
+        with open('attendance.csv', mode='w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerows(value)
+    
+    def write_barcode_attendance(self, value):
+        # Write the updated data back to the CSV file
+        with open('attendance.csv', 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerows(value)
+    
     
     

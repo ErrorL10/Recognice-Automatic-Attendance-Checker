@@ -1,3 +1,4 @@
+import csv
 from datetime import date
 import cv2
 import face_recognition
@@ -15,6 +16,7 @@ name_list = []
 files = os.listdir(path)
 process = 0
 
+
 class face_panel(tk.Toplevel):
     def __init__(self):
         super().__init__()
@@ -24,6 +26,9 @@ class face_panel(tk.Toplevel):
         
         self.camera_frame = camera_frame(master=self)
         self.camera_frame.pack() 
+        
+        self.controller = data_controller()
+        self.controller.fill_attendance()
 
        
 class camera_frame(ctk.CTkFrame):
@@ -33,7 +38,7 @@ class camera_frame(ctk.CTkFrame):
         self.classNames = []
         self.images = []
         self.device_id = 0
-        self.cap = None
+        self.isOpened = False
         
         self.camera_panel = ctk.CTkFrame(master=self)
         self.camera_panel.grid(row=0, column=0, sticky='nesw')
@@ -65,10 +70,15 @@ class camera_frame(ctk.CTkFrame):
         
         self.cap = cv2.VideoCapture(self.device_id)
         self.detect_face()
+        self.isOpened = True
+        
         
     def start_barcode_attendance(self):
         from barcode_window import barcode_window
-        self.cap.release()
+        if self.isOpened:
+            self.cap.release()
+            self.isOpened = False
+            
         self.master.destroy()
         barcode = barcode_window()
         barcode.mainloop  
@@ -99,13 +109,30 @@ class camera_frame(ctk.CTkFrame):
                     student_number = student[0]
             
             today = date.today()
-            date_today = today.strftime("%m/%d/%Y")
-            time_today = today.strftime("%H:%M")
+            date_today = today.strftime("%Y/%m/%d")
+            
+            import time
+            time_today = time.strftime("%H:%M:%S")
             
             student_info = f"{student_number}\n{name}"
             self.students_list.insert(0, student_info)
-            controller.write_face_attendance([student_number, name, date_today, 1, time_today, 0, "N/A", "Absent"])
+            controller.write_face_attendance(self.update_attendance(student_number))
 
+    def update_attendance(self, student_number):
+        import time
+        time_today = time.strftime("%H:%M:%S")
+            
+        updated_value = []
+        with open('attendance.csv', 'r', newline='') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                if row[0] == str(student_number):
+                    row[3] = 1
+                    row[4] = time_today
+                updated_value.append(row)
+        
+        return updated_value
+    
     def detect_face(self):
         try:
             success, self.img = self.cap.read()
@@ -151,46 +178,6 @@ class camera_frame(ctk.CTkFrame):
             s = str(e)
             print(s)
             
-    def decode_barcodes(self):
-        _, frame = self.cap.read()
-        
-        # Convert the frame to HSV color space
-        hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
-        # Extract the V channel (brightness)
-        brightness_channel = hsv_frame[:, :, 2]
-
-        # Normalize the brightness channel
-        normalized_brightness = cv2.normalize(brightness_channel, None, 0, 255, cv2.NORM_MINMAX)
-
-        # Convert the normalized brightness back to BGR color space
-        normalized_frame = cv2.cvtColor(normalized_brightness[:, :, None], cv2.COLOR_GRAY2BGR)
-
-        # Decode the barcodes in the normalized frame
-        decoded_objects = decode(normalized_frame)
-
-        # Draw bounding boxes
-        for obj in decoded_objects:
-            x, y, w, h = obj.rect
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            cv2.putText(frame, str(obj.data), (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
-
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA) 
-        processed_image = Image.fromarray(frame)
-
-        photo_image = ImageTk.PhotoImage(image=processed_image)
-
-        # Update the video label with the new frame
-        self.camera.photo_image = photo_image 
-        self.camera.configure(image=photo_image)
-        self.camera.after(10, self.decode_barcodes)
-
-               
-# if __name__ == "__main__":
-#     face = face_panel()
-#     face.mainloop()
-
-
 
 
 
