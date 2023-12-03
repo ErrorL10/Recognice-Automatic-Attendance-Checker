@@ -1,4 +1,5 @@
 import csv
+import os
 import tkinter as tk
 import customtkinter as ctk
 from PIL import Image, ImageTk
@@ -146,7 +147,6 @@ class home(ctk.CTkFrame):
         self.check_attendance_button.configure(state=tk.NORMAL)
         item = event.widget.focus()
         values = event.widget.item(item, "values")
-        print("selected item:", event.widget.item(item, "text"))
         self.section = values
         self.section_id =  event.widget.item(item, "text")
         
@@ -222,7 +222,6 @@ class students(ctk.CTkFrame):
         self.students_table.column("absent", width=100)  
         
         controller = data_controller()
-        print(self.section_selection.get())
         
         students_list = controller.get_student_table_info(students=controller.get_students(self.section_selection.get()))
         
@@ -248,7 +247,7 @@ class students(ctk.CTkFrame):
     
     def add_student(self):
         from add_student import add_student
-        new_student = add_student(master=self)
+        new_student = add_student()
         new_student.mainloop()
     
     def section_on_select(self, event):
@@ -259,7 +258,6 @@ class students(ctk.CTkFrame):
         self.view_student_info.configure(state=tk.NORMAL)
         item = event.widget.focus()
         values = event.widget.item(item, "values")
-        print("selected item:", event.widget.item(item, "text"))
         self.selected_student = values[0]
        
 class reports(ctk.CTkFrame):
@@ -271,27 +269,17 @@ class reports(ctk.CTkFrame):
         self.student_label = ctk.CTkLabel(master=self, text = "Reports", font= ("Roboto", 24))
         self.student_label.grid(row=0, column=0, padx=20, pady=20, sticky='ew')
         
-        # controller = data_controller()
-        # controller.insert_attendance()
-
-        # #Student Label
-        # self.student_label = ctk.CTkLabel(master=self, text = "Students", font= ("Roboto", 20))
-        # self.student_label.grid(row=0, column=0, padx=20, pady=20, sticky='ew')
-        
-
         #section dropdown
         values=[section[1] for section in self.controller.get_sections()]
         combobox_var = ctk.StringVar(value=values[0])
-        self.section_selection = ctk.CTkComboBox(master=self, state='readonly', values=values, command=self.section_on_select, variable=combobox_var)
+        self.section_selection = ctk.CTkComboBox(master=self, state='readonly', values=values, command=self.on_select, variable=combobox_var)
         self.section_selection.grid(row=0, column=1, padx=20, pady=20, sticky='ew')
         
         #date selection
         values=self.controller.get_dates(self.section_selection.get())
-        print(values)
-        self.date_selection = ctk.CTkComboBox(master=self, state='readonly', values=values)
+        combobox_var = ctk.StringVar(value=values[0])
+        self.date_selection = ctk.CTkComboBox(master=self, state='readonly', values=values, command=self.on_select, variable=combobox_var)
         self.date_selection.grid(row=0, column=0, padx=20, pady=20, sticky='ew')
-        self.date_selection.set(values[0])
-        self.date_selection.bind("<<ComboboxSelected>>", self.section_on_select)
         
         #Table
         columns = ["student_number", "name", "today"]
@@ -306,7 +294,7 @@ class reports(ctk.CTkFrame):
         self.students_table.column("#0", width=50)
         self.students_table.column("today", width=100)   
         
-        students_list = self.controller.get_report_table_info(students=self.controller.get_students(self.section_selection.get()))
+        students_list = self.controller.get_report_table_info(students=self.controller.get_students(self.section_selection.get()), date=self.date_selection.get())
         
         counter = 1
         for student in students_list:
@@ -317,28 +305,37 @@ class reports(ctk.CTkFrame):
         self.students_table.bind("<<TreeviewSelect>>", self.on_select)
         
         self.download_report_button = ctk.CTkButton(master=self, text="DOWNLOAD REPORT", command=self.download_report)
-        self.download_report_button.grid(row=2, column=0, padx=30, pady=20, sticky='ew')
-
-        self.print_report_button = ctk.CTkButton(master=self, text="PRINT REPORT", command=self.print_report)
-        self.print_report_button.grid(row=2, column=1, padx=30, pady=20, sticky='ew')
+        self.download_report_button.grid(row=2, column=0, columnspan=2, padx=30, pady=20, sticky='ew')
         
-    
-    def print_report(self):
-        pass
-    
+        
     def download_report(self):
-        pass
+        date_path = self.date_selection.get().replace('/', '')
+        filename = self.section_selection.get() + date_path  + 'Attendance.csv'
+        downloads_folder = os.path.expanduser("~") + "/Downloads"
+        file_path = os.path.join(downloads_folder, filename)
+        
+        data = self.controller.get_report_table_info(students=self.controller.get_students(self.section_selection.get()), date=self.date_selection.get())
+        data.insert(0, ['Student Number', 'Full Name', 'Attendance Status'])
+        
+        with open(file_path, mode='w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerows(data)
+        
+        messagebox.showinfo("Download Successful", f"File: {filename} has been successfully downloaded. Check your Downloads Folder")
+        file.close()
     
-    def section_on_select(self, event):
+    def on_select(self, event):
         self.students_table.delete(*self.students_table.get_children())
         selected_value = self.section_selection.get()
-        self.controller.get_report_table_info(students=self.controller.get_students(selected_value))
+        selected_date = self.date_selection.get()
         
-    def on_select(self, event):
-        item = event.widget.focus()
-        values = event.widget.item(item, "values")
-        print("selected item:", event.widget.item(item, "text"))
-        self.selected_student = values[0]
+        students_list = self.controller.get_report_table_info(students=self.controller.get_students(selected_value), date=selected_date)
+        
+        counter = 1
+        for student in students_list:
+            self.students_table.insert("", tk.END,text=counter, values=student)
+            counter+=1
+            
         
 class view_student(ctk.CTkFrame):
      def __init__(self, master, **kwargs):

@@ -212,7 +212,6 @@ class data_controller:
         return new_dates
         
     def get_student_table_info(self, students):
-        print(students, "aaaaaa")
         conn = mysql.connector.connect(
             host="localhost",
             user="root",
@@ -242,7 +241,7 @@ class data_controller:
             
         return students_list
     
-    def get_report_table_info(self, students):
+    def get_report_table_info(self, students, date):
         conn = mysql.connector.connect(
             host="localhost",
             user="root",
@@ -250,16 +249,16 @@ class data_controller:
             database=self.database_name
         )
 
-        cursor = conn.cursor()
+        cursor = conn.cursor(buffered=True)
         
         students_list = []
         for student in students:
             sql = "SELECT attendance_status FROM attendance WHERE student_number = %s AND section_id = %s AND attendance_date = %s"
-            cursor.execute(sql, (student[0], 1, "2023/12/03"))
+            cursor.execute(sql, (student[0], 1, date))
             
             present = cursor.fetchone()
             
-            new_student = (student[0], student[1], present)
+            new_student = (student[0], student[1], present[0])
             students_list.append(new_student)
         
         # Commit the changes and close the connection
@@ -307,7 +306,67 @@ class data_controller:
             conn.commit()
             cursor.close()
             conn.close()
-            
+    
+    def find_section(self, value):
+        conn = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database=self.database_name
+        )
+        cursor = conn.cursor(buffered=True)
+        
+        sql = "SELECT section_name FROM sections WHERE section_name = %s"
+        cursor.execute(sql, (value,))
+        
+        data = cursor.fetchone()
+        
+         # Commit the changes and close the connection
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        if not data:
+            return False
+        else:
+            return True
+        
+    def add_section(self, value):
+        conn = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database=self.database_name
+        )
+        cursor = conn.cursor()
+        
+        sql = "INSERT INTO sections (section_name) VALUES (%s)"
+        cursor.execute(sql, (value,))
+        print("section added")
+        
+         # Commit the changes and close the connection
+        conn.commit()
+        cursor.close()
+        conn.close()    
+         
+    def add_student(self, values):
+        conn = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database=self.database_name
+        )
+        cursor = conn.cursor()
+        
+        sql = "INSERT INTO students (student_number, first_name, last_name, middle_initial, section_id, birthday, age, gender, contact_no, student_email) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        cursor.execute(sql, (values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7], values[8]))
+        print("student added")
+        
+        # Commit the changes and close the connection
+        conn.commit()
+        cursor.close()
+        conn.close()    
+         
     def update_student(self, values):
         conn = mysql.connector.connect(
             host="localhost",
@@ -329,7 +388,6 @@ class data_controller:
     
     
     def fill_attendance(self, section):
-        print(section)
         students_list = self.get_students(section)
         
         today = date.today()
@@ -341,9 +399,7 @@ class data_controller:
             data.append(data_row)
             
         if self.attendance_is_empty():
-            print(data)
-            
-                
+
             with open('attendance.csv', mode='a', newline='') as file:
                 writer = csv.writer(file)
                 writer.writerows(data)
