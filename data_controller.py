@@ -5,7 +5,8 @@ import mysql.connector
 class data_controller:
     def __init__(self):
         self.database_name = "recognice_db"
-    
+        self.today = date.today()
+        
     def create_database(self):
         conn = mysql.connector.connect(
         host="localhost",
@@ -55,14 +56,12 @@ class data_controller:
         """
         cursor.execute(sql)
         
-        sql = """
-        CREATE TABLE IF NOT EXISTS users (
-            user_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-            user_name VARCHAR(255),
-            user_email VARCHAR(255),
-            user_password VARCHAR(255)
-        );
-        """
+        sql ="""
+        CREATE TABLE IF NOT EXISTS sections (
+        section_id int(11) NOT NULL,
+        section_name varchar(20) NOT NULL
+        );"""
+        
         cursor.execute(sql)
         
         sql = """
@@ -87,7 +86,133 @@ class data_controller:
         
         print("tables created")
 
+    def get_sections(self):
+        conn = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="",
+        database="recognice_db"
+        )
+        cursor = conn.cursor()
+        
+        sql = "SELECT * FROM sections"
+        cursor.execute(sql)
+        sections = cursor.fetchall()
+        
+         # Commit the changes and close the connection
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return sections
+     
+    def get_students(self, section):
+        conn = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database=self.database_name
+        )
+
+        cursor = conn.cursor()
+
+        sql = "SELECT student_number, CONCAT(first_name, ' ', middle_initial, '. ', last_name) as Name, section_id FROM students WHERE section_id = %s"
+        cursor.execute(sql, (self.get_section_id(section),))
+        students = cursor.fetchall()
+        
+        # Commit the changes and close the connection
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return students  
+    
+    def get_section_table_info(self):
+        conn = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database=self.database_name
+        )
+
+        cursor = conn.cursor()
+        
+        sections = self.get_sections()
+
+        sections_info = []
+        for section in sections:
+            sql = "SELECT COUNT(*) from students WHERE section_id = %s"
+            cursor.execute(sql, (section[0],))
+            count = cursor.fetchone()
+            
+            date_today = self.today.strftime("%Y/%m/%d")
+            
+            sql = "SELECT count(attendance_status) from attendance WHERE section_id = %s AND attendance_date = %s AND attendance_status = %s"
+            cursor.execute(sql, (section[0], date_today, "Present"))
+            present = cursor.fetchone()
+            
+            sql = "SELECT count(attendance_status) from attendance WHERE section_id = %s AND attendance_date = %s AND attendance_status = %s"
+            cursor.execute(sql, (section[0], date_today, "Absent"))
+            absent = cursor.fetchone()
+            
+            sections_info.append((section[1], count[0], present[0] if present[0] > 0 else "Not Checked", absent[0] if absent[0] > 0 else "Not Checked"))
+            
+        # Commit the changes and close the connection
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return sections_info
+    
+    def get_section_id(self, section):
+        conn = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database=self.database_name
+        )
+
+        cursor = conn.cursor()
+        
+        sql = "SELECT section_id from sections WHERE section_name = %s"
+        cursor.execute(sql, [section])
+        section_id = cursor.fetchone()
+        
+        # Commit the changes and close the connection
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        try:
+            return section_id[0]
+        except TypeError:
+            return 0
+    
+    def get_dates(self, section):
+        conn = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database=self.database_name
+        )
+
+        cursor = conn.cursor()
+        
+        sql = "SELECT DISTINCT attendance_date from attendance WHERE section_id = %s"
+        cursor.execute(sql, [self.get_section_id(section)])
+        dates = cursor.fetchall()
+        
+        # Commit the changes and close the connection
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        new_dates = [date.strftime(i[0], '%Y/%m/%d') for i in dates]
+        
+        return new_dates
+        
     def get_student_table_info(self, students):
+        print(students, "aaaaaa")
         conn = mysql.connector.connect(
             host="localhost",
             user="root",
@@ -107,9 +232,7 @@ class data_controller:
             cursor.execute(sql, (student[0], "Absent"))
             absent = cursor.fetchone()
             
-            list = [present[0], absent[0]]
-            
-            new_student = student + tuple(list)
+            new_student = (student[0], student[1], present, absent)
             students_list.append(new_student)
         
         # Commit the changes and close the connection
@@ -119,7 +242,7 @@ class data_controller:
             
         return students_list
     
-    def get_students(self):
+    def get_report_table_info(self, students):
         conn = mysql.connector.connect(
             host="localhost",
             user="root",
@@ -128,17 +251,39 @@ class data_controller:
         )
 
         cursor = conn.cursor()
-
-        sql = "SELECT student_number, CONCAT(first_name, ' ', middle_initial, '. ', last_name) as Name FROM students WHERE section = 'BSCS-3A'"
-        cursor.execute(sql)
-        students = cursor.fetchall()
+        
+        students_list = []
+        for student in students:
+            sql = "SELECT attendance_status FROM attendance WHERE student_number = %s AND section_id = %s AND attendance_date = %s"
+            cursor.execute(sql, (student[0], 1, "2023/12/03"))
+            
+            present = cursor.fetchone()
+            
+            new_student = (student[0], student[1], present)
+            students_list.append(new_student)
         
         # Commit the changes and close the connection
         conn.commit()
         cursor.close()
         conn.close()
+            
+        return students_list
+     
+    def get_student_info(self, student_number):
+        conn = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database=self.database_name
+        )
         
-        return students
+        cursor = conn.cursor()
+        
+        sql = "SELECT * FROM students WHERE student_number = %s"
+        cursor.execute(sql, (student_number, ))
+        student_info = cursor.fetchone()
+        
+        return student_info
     
     def insert_attendance(self):
         conn = mysql.connector.connect(
@@ -154,30 +299,69 @@ class data_controller:
             reader = csv.reader(file)
             
             for row in reader:
-                sql = f"INSERT INTO attendance (student_number, attendance_date, face_attendance, face_attendance_time, barcode_attendance, barcode_attendance_time, attendance_status) VALUES (%s, %s, %s, %s, %s, %s, %s)"
-                cursor.execute(sql, (row[0], row[2], row[3], row[4], row[5], row[6], row[7]))
+                sql = "INSERT INTO attendance (student_number, section_id, attendance_date, face_attendance, face_attendance_time, barcode_attendance, barcode_attendance_time, attendance_status) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+                cursor.execute(sql, (row[0], row[2], row[3], row[4], row[5], row[6], row[7], row[8]))
+                print("row inserted")
 
             # Commit the changes and close the connection
             conn.commit()
             cursor.close()
             conn.close()
+            
+    def update_student(self, values):
+        conn = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database=self.database_name
+        )
+        cursor = conn.cursor()
         
-    def fill_attendance(self):
-        students_list = self.get_students()
+        sql = "UPDATE students SET first_name = %s, last_name = %s, middle_initial = %s, section_id = %s, birthday = %s, age = %s, gender = %s, contact_no = %s, student_email = %s WHERE student_number = %s"
+        cursor.execute(sql, (values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7], values[8], values[9]))
+        print("student updated")
+        
+        # Commit the changes and close the connection
+        conn.commit()
+        cursor.close()
+        conn.close()    
+        
+    
+    
+    def fill_attendance(self, section):
+        print(section)
+        students_list = self.get_students(section)
         
         today = date.today()
         date_today = date.strftime(today, "%Y/%m/%d")
         
         data = []
         for row in students_list:
-            data_row = [row[0], row[1], date_today, "N/A", 0, "N/A", 0, "Absent"]
+            data_row = [row[0], row[1], row[2], date_today, "N/A", 0, "N/A", 0, "Absent"]
             data.append(data_row)
             
-        with open('attendance.csv', mode='a', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerows(data)
-        pass
+        if self.attendance_is_empty():
+            print(data)
+            
+                
+            with open('attendance.csv', mode='a', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerows(data)
+        else:
+            print("no")
     
+    def attendance_is_empty(self):
+        with open('attendance.csv', "r") as file:
+            reader = csv.reader(file)
+            old_data = list(reader)
+        
+        return len(old_data) == 0
+            
+            
+    def reset_attendance(self):
+        with open('attendance.csv', 'w') as file:
+            file.write('')
+            
     def write_face_attendance(self, value):
         with open('attendance.csv', mode='w', newline='') as file:
             writer = csv.writer(file)

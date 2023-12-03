@@ -1,8 +1,8 @@
 import csv
 from datetime import date
+from tkinter import messagebox
 import cv2
 import face_recognition
-from pyzbar.pyzbar import decode
 import os
 import numpy as np
 import tkinter as tk
@@ -11,40 +11,55 @@ from Anti_Spoofing.test import test
 import customtkinter as ctk
 from data_controller import data_controller
 
-path = 'student_images'
 name_list = []
-files = os.listdir(path)
-process = 0
 
-
-class face_panel(tk.Toplevel):
-    def __init__(self):
+class face_panel(ctk.CTkToplevel):
+    def __init__(self, section):
         super().__init__()
         
+        self.section = section
         self.title('Face Recognition')
-        self.geometry('900x600')
         
-        self.camera_frame = camera_frame(master=self)
-        self.camera_frame.pack() 
+        # Color Theme 
+        ctk.set_appearance_mode("dark")
+        ctk.set_default_color_theme("dark-blue")
+        
+        self.main_frame = ctk.CTkFrame(master=self)
+        self.main_frame.grid_rowconfigure(0, weight=1)
+        self.main_frame.grid_rowconfigure(1, weight=1)
+        self.main_frame.grid_columnconfigure(0, weight=1)
+        self.main_frame.grid_columnconfigure(1, weight=1)
+        self.main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        self.main_label = ctk.CTkLabel(master=self.main_frame, text="Face Recognition Attendance", font=("Roboto", 24))
+        self.main_label.grid(row=0, column=0, padx=20, pady=20, sticky="ew")
+        
+        self.camera_frame = camera_frame(master=self.main_frame, section=self.section)
+        self.camera_frame.grid(row=1, column=0, sticky='nesw')
         
         self.controller = data_controller()
-        self.controller.fill_attendance()
-
-       
+        self.controller.fill_attendance(self.section[0])
+    
 class camera_frame(ctk.CTkFrame):
-    def __init__(self, master, **kwargs):
+    def __init__(self, master, section, **kwargs):
         super().__init__(master, **kwargs)
         
         self.classNames = []
         self.images = []
         self.device_id = 0
         self.isOpened = False
+        self.section = section
+        self.path = 'student_images/' + self.section[0]
+        self.files = os.listdir(self.path)
+        
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_columnconfigure(1, weight=1)
         
         self.camera_panel = ctk.CTkFrame(master=self)
         self.camera_panel.grid(row=0, column=0, sticky='nesw')
         
-        self.camera = ctk.CTkLabel(master=self.camera_panel, text="")
-        self.camera.grid(row=0, column=0, padx=20, pady=20, sticky='nesw')
+        self.camera = ctk.CTkLabel(master=self.camera_panel, height=400, width=600, text="")
+        self.camera.grid(row=0, column=0, padx=20, pady=20, sticky='ew')
         # self.cap  = cv2.VideoCapture(self.device_id)
         self.open_camera_button = ctk.CTkButton(master=self.camera_panel, text="Open Camera", command=self.open_camera)
         self.open_camera_button.grid(row=1, column=0, padx=20, pady=20, sticky='nesw')
@@ -61,8 +76,8 @@ class camera_frame(ctk.CTkFrame):
         self.next_button.grid(row=1, column=0, padx=20, pady=20, sticky='nesw')
     
     def open_camera(self):
-        for file in files:
-            self.curImg = cv2.imread(f'{path}/{file}')
+        for file in self.files:
+            self.curImg = cv2.imread(f'{self.path}/{file}')
             self.images.append(self.curImg)
             self.classNames.append(os.path.splitext(file)[0])
 
@@ -74,15 +89,22 @@ class camera_frame(ctk.CTkFrame):
         
         
     def start_barcode_attendance(self):
-        from barcode_window import barcode_window
-        if self.isOpened:
-            self.cap.release()
-            self.isOpened = False
-            
-        self.master.destroy()
-        barcode = barcode_window()
-        barcode.mainloop  
-    
+        
+        confirm = messagebox.askyesno("Warning", f"Are you sure you want to end Face Attendance? This action is irreversible", parent=self)
+        
+        if confirm:
+            from barcode_window import barcode_window
+            if self.isOpened:
+                self.cap.release()
+                self.isOpened = False
+                
+            root = self.winfo_toplevel()
+            root.destroy()
+            barcode = barcode_window(self.section[0])
+            barcode.mainloop  
+        else:
+            print("continue Attendance")
+        
     def findEncodings(self):
             self.encodeList = []
             for img in self.images:
@@ -97,7 +119,8 @@ class camera_frame(ctk.CTkFrame):
 
     def markAttendance(self, name):
         controller = data_controller()
-        students = controller.get_students()
+        students = controller.get_students(self.section[0])
+        print(students)
         
         name = name.title()
         if name not in name_list: 
@@ -107,12 +130,6 @@ class camera_frame(ctk.CTkFrame):
             for student in students:
                 if student[1] == name:
                     student_number = student[0]
-            
-            today = date.today()
-            date_today = today.strftime("%Y/%m/%d")
-            
-            import time
-            time_today = time.strftime("%H:%M:%S")
             
             student_info = f"{student_number}\n{name}"
             self.students_list.insert(0, student_info)
@@ -127,8 +144,8 @@ class camera_frame(ctk.CTkFrame):
             reader = csv.reader(file)
             for row in reader:
                 if row[0] == str(student_number):
-                    row[3] = 1
-                    row[4] = time_today
+                    row[4] = 1
+                    row[5] = time_today
                 updated_value.append(row)
         
         return updated_value
@@ -174,9 +191,7 @@ class camera_frame(ctk.CTkFrame):
         except cv2.error as e:
             s = str(e)
             print(s)
-        except Exception as e:
-            s = str(e)
-            print(s)
+       
             
 
 
