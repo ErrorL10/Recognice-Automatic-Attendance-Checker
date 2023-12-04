@@ -46,7 +46,7 @@ class data_controller:
             first_name VARCHAR(255),
             last_name VARCHAR(255),
             middle_initial VARCHAR(255),
-            section VARCHAR(20),
+            section_id INT,
             birthday DATE,
             age INT,
             gender VARCHAR(255),
@@ -58,8 +58,8 @@ class data_controller:
         
         sql ="""
         CREATE TABLE IF NOT EXISTS sections (
-        section_id int(11) NOT NULL,
-        section_name varchar(20) NOT NULL
+        section_id INT NOT NULL,
+        section_name VARCHAR(20) NOT NULL
         );"""
         
         cursor.execute(sql)
@@ -68,6 +68,7 @@ class data_controller:
         CREATE TABLE IF NOT EXISTS attendance (
             attendance_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
             student_number INT,
+            section_id INT,
             attendance_date DATE,
             face_attendance VARCHAR(255),
             face_attendance_time TIME,
@@ -332,6 +333,7 @@ class data_controller:
             return True
         
     def add_section(self, value):
+        print("Value:", value)
         conn = mysql.connector.connect(
             host="localhost",
             user="root",
@@ -359,7 +361,7 @@ class data_controller:
         cursor = conn.cursor()
         
         sql = "INSERT INTO students (student_number, first_name, last_name, middle_initial, section_id, birthday, age, gender, contact_no, student_email) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-        cursor.execute(sql, (values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7], values[8]))
+        cursor.execute(sql, (values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7], values[8], values[9]))
         print("student added")
         
         # Commit the changes and close the connection

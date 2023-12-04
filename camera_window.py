@@ -5,36 +5,37 @@ from data_controller import data_controller
 from PIL import Image, ImageTk
 
 class camera_window(ctk.CTkToplevel):
-    def __init__(self, master, **kwargs):
-        super().__init__(master, **kwargs)
+    def __init__(self):
+        super().__init__()
         
         self.title('Add Pictures')
-            
-        # Color Theme 
-        ctk.set_appearance_mode("dark")
-        ctk.set_default_color_theme("dark-blue")
-        
-        self.camera_label = ctk.CTkLabel(master=self, text="Add Pictures", font=("Roboto", 32))
-        self.camera_label.grid(row=0, column=0, sticky='nesw')
-        
-        self.camera_panel = ctk.CTkFrame(master=self)
-        self.camera_panel.grid(row=1, column=0, sticky='nesw')
-    
-        self.camera = tk.Label(master=self.camera_panel, height=400, width=600, text="")
-        self.camera.grid(row=0, column=0, padx=20, pady=20, sticky='ew')
-        self.open_camera()
-        
-    def open_camera(self):
-        self.cap = cv2.VideoCapture(0)
-        
-        success, self.img = self.cap.read()
-        self.video_img = cv2.cvtColor(self.img, cv2.COLOR_BGR2RGB)
-        # Convert the processed frame to PIL Image format
-        processed_image = Image.fromarray(self.video_img)
+        self.i = 0
 
-         # Convert the PIL Image to Tkinter PhotoImage67
-        video_label = ImageTk.PhotoImage(image=processed_image)
-            
-        self.camera.photo_image = video_label
-        self.camera.configure(image=video_label)
-        self.camera.after(10, self.open_camera)
+        self.canvas = tk.Canvas(self, width=640, height=480)
+        self.canvas.pack()
+
+        self.btn_snapshot = ctk.CTkButton(master=self, text="Take Picture", command=self.take_picture)
+        self.btn_snapshot.pack(anchor=tk.CENTER, expand=True)
+
+        self.video = cv2.VideoCapture(0)
+        self.delay = 15
+        self.update()
+
+    def take_picture(self):
+        if self.i <= 4:
+            ret, frame = self.video.read()
+            if ret:
+                cv2.imwrite("student_images/temp/image{}.jpg".format(self.i), frame)
+                self.i += 1
+        else:
+            self.video.release()
+            self.destroy()
+
+    def update(self):
+        ret, frame = self.video.read()
+        if ret:
+            self.pic = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            self.photo = ImageTk.PhotoImage(image=Image.fromarray(self.pic))
+            self.canvas.create_image(0, 0, image=self.photo, anchor=tk.NW)
+        self.after(self.delay, self.update)
+

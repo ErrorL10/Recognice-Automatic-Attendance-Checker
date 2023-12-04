@@ -1,3 +1,5 @@
+import os
+import shutil
 import tkinter as tk
 from tkinter import messagebox
 import customtkinter as ctk
@@ -114,24 +116,46 @@ class add_student(ctk.CTkToplevel):
         self.cancel_button.grid(row=24,column=0,padx=20,pady=(5, 20), sticky='ew')
     
     def confirm(self):
+        selected_section = self.section_select.get()
         confirm = messagebox.askyesno("Confirm?", "Add Student?")
-        if confirm:
-            selected_section = self.section_select.get()
+        fullname = self.first_name_entry.get() + " " + self.middle_initial_entry.get() + " " + self.last_name_entry.get()
+        
+        source_folder = 'student_images/temp'
+        target_folder = f'student_images/{selected_section}'
+
+        jpg_count = len([filename for filename in os.listdir(source_folder)])
+        print(jpg_count)
+        if jpg_count == 5:
             section = ''
-            if self.controller.find_section(selected_section):
-                print(self.controller.find_section(selected_section))
-                section = self.controller.get_section_id(selected_section)
-            else:
-                self.controller.add_section(section)
-                section = self.controller.get_section_id(selected_section)
-                 
-            values = [self.student_number_label.get(), self.first_name_entry.get(), self.last_name_entry.get(), 
-                      self.middle_initial_entry.get(), section, self.birthday_entry.get(), 
-                    self.age_entry.get(),self.gender_select.get(), self.contact_no_entry.get(), 
-                    self.student_email_entry.get()]
-             
-            self.controller.add_student(values=values)
-            self.destroy()
+            if confirm:
+                if not os.path.exists(target_folder):
+                    os.makedirs(target_folder)
+
+                for i, filename in enumerate(os.listdir(source_folder), start=1):
+                    print("start")
+                    if filename.endswith('.jpg'):
+                        new_filename = '{}{}.jpg'.format(fullname, i)
+                        os.rename(os.path.join(source_folder, filename), os.path.join(source_folder, new_filename))
+                        shutil.copy(os.path.join(source_folder, new_filename), os.path.join(target_folder, new_filename))
+                        os.remove(os.path.join(source_folder, new_filename))
+                        print("success")
+                    
+                if self.controller.find_section(selected_section):
+                    print(self.controller.find_section(selected_section))
+                    section = self.controller.get_section_id(selected_section)
+                else:
+                    self.controller.add_section(selected_section)
+                    section = self.controller.get_section_id(selected_section)
+                    
+                values = [self.student_number_entry.get(), self.first_name_entry.get(), self.last_name_entry.get(), 
+                        self.middle_initial_entry.get(), section, self.birthday_entry.get(), 
+                        self.age_entry.get(),self.gender_select.get(), self.contact_no_entry.get(), 
+                        self.student_email_entry.get()]
+                
+                self.controller.add_student(values=values)
+                self.destroy()
+        else:
+            messagebox.showinfo("Not Enough Pictures", "Not Enough Pictures taken, please take more")
     
     def cancel(self):
         confirm = messagebox.askyesno("Cancel?", "Do you cancel adding a student?")
@@ -140,6 +164,6 @@ class add_student(ctk.CTkToplevel):
     
     def add_picture(self):
         from camera_window import camera_window
-        camera = camera_window(master=self)
+        camera = camera_window()
         camera.mainloop()
         
