@@ -13,7 +13,7 @@ class add_student(ctk.CTkToplevel):
         ctk.set_default_color_theme("dark-blue")
         
         self.title('Add Student')
-        self.geometry('275x500')
+        self.geometry('250x500+1000+200')
         
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(0, weight=1)
@@ -22,10 +22,6 @@ class add_student(ctk.CTkToplevel):
         
         self.form_frame = ctk.CTkScrollableFrame(master=self)
         self.form_frame.grid(row=0, column=0, sticky='nesw')
-        
-        for i in range(22):
-            self.form_frame.grid_columnconfigure(i, minsize=250)
-            self.form_frame.grid_rowconfigure(i, weight=1)
         
         #add student
         self.add_student_label = ctk.CTkLabel(master=self.form_frame, text="Add new Student", font=("Roboto", 24))

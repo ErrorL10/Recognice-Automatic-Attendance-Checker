@@ -156,7 +156,7 @@ class data_controller:
             cursor.execute(sql, (section[0], date_today, "Absent"))
             absent = cursor.fetchone()
             
-            sections_info.append((section[1], count[0], present[0] if present[0] > 0 else "Not Checked", absent[0] if absent[0] > 0 else "Not Checked"))
+            sections_info.append((section[1], count[0], present[0] if present[0] > 0 else "Not Checked", absent[0] if absent[0] > 0 else absent[0] if absent[0] == 0 and present[0] > 0  else "Not Checked"))
             
         # Commit the changes and close the connection
         conn.commit()

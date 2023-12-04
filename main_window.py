@@ -263,7 +263,7 @@ class reports(ctk.CTkFrame):
         super().__init__(master, **kwargs)
         
         self.controller = data_controller()
-        
+        self.grid_columnconfigure(0, weight=1)
         self.student_label = ctk.CTkLabel(master=self, text = "Reports", font= ("Roboto", 24))
         self.student_label.grid(row=0, column=0, padx=20, pady=20, sticky='ew')
         

@@ -121,7 +121,7 @@ class view_student(ctk.CTkToplevel):
         self.cancel_button.grid(row=0,column=0,padx=20,pady=20, sticky='ew')
     
     def confirm(self):
-        confirm = messagebox.askyesno("Update Student", "Are you sure you want to update the student info?")
+        confirm = messagebox.askyesno("Update Student", "Are you sure you want to update the student info?", parent=self)
         
         if confirm:
             self.edit_student_button.grid(row=0,column=0,padx=20,pady=20, columnspan=2, sticky='ew')
