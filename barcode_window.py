@@ -60,7 +60,7 @@ class camera_frame(ctk.CTkFrame):
         self.finish_button.grid(row=1, column=0, padx=20, pady=20, sticky='nesw')
     
     def open_camera(self):
-        self.cap = cv2.VideoCapture(0)
+        self.cap = cv2.VideoCapture(1)
         self.decode_barcodes() 
     
     def end_attendance(self):

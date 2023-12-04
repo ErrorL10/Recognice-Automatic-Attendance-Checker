@@ -58,7 +58,7 @@ class data_controller:
         
         sql ="""
         CREATE TABLE IF NOT EXISTS sections (
-        section_id INT NOT NULL,
+        section_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
         section_name VARCHAR(20) NOT NULL
         );"""
         
@@ -117,7 +117,7 @@ class data_controller:
 
         cursor = conn.cursor()
 
-        sql = "SELECT student_number, CONCAT(first_name, ' ', middle_initial, '. ', last_name) as Name, section_id FROM students WHERE section_id = %s"
+        sql = "SELECT student_number, CONCAT(first_name, ' ', middle_initial, ' ', last_name) as Name, section_id FROM students WHERE section_id = %s"
         cursor.execute(sql, (self.get_section_id(section),))
         students = cursor.fetchall()
         
@@ -397,7 +397,7 @@ class data_controller:
         
         data = []
         for row in students_list:
-            data_row = [row[0], row[1], row[2], date_today, "N/A", 0, "N/A", 0, "Absent"]
+            data_row = [row[0], row[1], row[2], date_today, 0, "N/A", 0, "N/A", "Absent"]
             data.append(data_row)
             
         if self.attendance_is_empty():

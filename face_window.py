@@ -120,9 +120,8 @@ class camera_frame(ctk.CTkFrame):
     def markAttendance(self, name):
         controller = data_controller()
         students = controller.get_students(self.section[0])
-        print(students)
+        print(name)
         
-        name = name.title()
         if name not in name_list: 
             name_list.append(name)
             
@@ -131,8 +130,7 @@ class camera_frame(ctk.CTkFrame):
                 if student[1] == name:
                     student_number = student[0]
             
-            student_info = f"{student_number}\n{name}"
-            self.students_list.insert(0, student_info)
+            self.students_list.insert(0, name)
             controller.write_face_attendance(self.update_attendance(student_number))
 
     def update_attendance(self, student_number):
