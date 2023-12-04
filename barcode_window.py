@@ -157,7 +157,15 @@ class camera_frame(ctk.CTkFrame):
                 if row[0] == str(student_number):
                     row[6] = 1
                     row[7] = time_today
-                    row[8] = 'Present'  
+
+                    print(row[4], row[6])
+                    if int(row[4]) == 1 and int(row[6]) == 1:
+                        row[8] = 'Present'
+                        print(row[8])  
+                    else:
+                        row[8] = 'Absent'
+                        print(row[8])
+                    
                 updated_value.append(row)
         
         return updated_value

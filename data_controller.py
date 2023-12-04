@@ -258,9 +258,13 @@ class data_controller:
             cursor.execute(sql, (student[0], 1, date))
             
             present = cursor.fetchone()
-            
-            new_student = (student[0], student[1], present[0])
-            students_list.append(new_student)
+
+            try:
+                new_student = (student[0], student[1], present[0])
+                students_list.append(new_student)
+            except TypeError:
+                print("no data")
+   
         
         # Commit the changes and close the connection
         conn.commit()
