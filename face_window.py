@@ -168,6 +168,7 @@ class camera_frame(ctk.CTkFrame):
             
                 if matches[matchIndex] and isFake == 1:
                     name = self.classNames[matchIndex].upper().lower()
+                    name = name[:-1].title()
                     y1,x2,y2,x1 = faceloc
                     # since we scaled down by 4 times
                     y1, x2,y2,x1 = y1*4,x2*4,y2*4,x1*4

@@ -2,8 +2,6 @@ import csv
 import os
 import tkinter as tk
 import customtkinter as ctk
-from PIL import Image, ImageTk
-from CTkTable import *
 from datetime import date
 from tkinter import messagebox
 from tkinter import ttk
@@ -200,7 +198,7 @@ class students(ctk.CTkFrame):
 
         #section dropdown
         values=[section[1] for section in self.controller.get_sections()]
-        combobox_var = ctk.StringVar(value=values[0])
+        combobox_var = ctk.StringVar(value=values[0] if len(values) > 0 else 'No Sections')
         self.section_selection = ctk.CTkComboBox(master=self, state='readonly', values=values, command=self.section_on_select, variable=combobox_var)
         self.section_selection.grid(row=0, column=1, padx=20, pady=20, sticky='ew')
         # self.section_selection.bind("<<ComboboxSelected>>", self.section_on_select)
@@ -271,13 +269,13 @@ class reports(ctk.CTkFrame):
         
         #section dropdown
         values=[section[1] for section in self.controller.get_sections()]
-        combobox_var = ctk.StringVar(value=values[0])
+        combobox_var = ctk.StringVar(value= values[0] if len(values) > 0 else 'No Sections')
         self.section_selection = ctk.CTkComboBox(master=self, state='readonly', values=values, command=self.on_select, variable=combobox_var)
         self.section_selection.grid(row=0, column=1, padx=20, pady=20, sticky='ew')
         
         #date selection
         values=self.controller.get_dates(self.section_selection.get())
-        combobox_var = ctk.StringVar(value=values[0])
+        combobox_var = ctk.StringVar(value= values[0] if len(values) > 0 else 'No Dates Available')
         self.date_selection = ctk.CTkComboBox(master=self, state='readonly', values=values, command=self.on_select, variable=combobox_var)
         self.date_selection.grid(row=0, column=0, padx=20, pady=20, sticky='ew')
         
